@@ -1,0 +1,367 @@
+﻿@using BusinessLogicLayer
+@using Entities
+@{
+    ViewBag.Title = "Makale Web Forum";
+    Layout = "~/Views/Shared/_LayoutHome.cshtml";
+}
+@{
+    BLLRepository<Article> rep_Artc = new BLLRepository<Article>();
+    BLLRepository<ArticleLikes> rep_ArtcLike = new BLLRepository<ArticleLikes>();
+    try
+    {
+        if (Session["LoginUSer"] != null)
+        {
+            if (ViewBag.ArticleDetail != null) // Yorum için açılan pencere ise. Tek Bİr Makale Gözükecek ise
+            {
+                Article articleDetail = ViewBag.ArticleDetail;
+                DateTime SharedDate = articleDetail.articleSharedDate;
+                int diff = (DateTime.Now - SharedDate).Days;
+                string diffName = "Gün";
+                string LikesCount = articleDetail.likes.Count() > 0 ? articleDetail.likes.Count().ToString() : "";
+                string CommentsCount = articleDetail.comments.Count() > 0 ? articleDetail.comments.Count().ToString() : "";
+                Login ll2 = (Login)Session["LoginUSer"];
+                string userCodeID = ll2.user.userCodeID;
+                bool IsMyArticle2 = articleDetail.user.userCodeID == ll2.user.userCodeID ? true : false;
+                int EditItemIndex2 = 1;
+                if (diff == 0)
+                {
+                    diff = (DateTime.Now - SharedDate).Hours;
+                    diffName = "Saat";
+                    if (diff == 0)
+                    {
+                        diff = (DateTime.Now - SharedDate).Minutes;
+                        diffName = "Dakika";
+                        if (diff == 0)
+                        {
+                            diff = (DateTime.Now - SharedDate).Seconds;
+                            diffName = "Saniye";
+                        }
+                    }
+                }
+
+
+                <div class="posts-section">
+                    <div class="post-bar">
+                        <div class="post_topbar">
+                            <div class="usy-dt">
+                                <img src="~/images/writer.png" width="50" height="50" alt="">
+                                <div class="usy-name">
+                                    <h3>@articleDetail.user.userFirstName @articleDetail.user.userLastName</h3>
+                                    <span><img src="images/clock.png" alt="">@diff @diffName Önce</span>
+                                </div>
+                            </div>
+                            <div class="ed-opts">
+                                @{
+                                    if (IsMyArticle2)
+                                    {
+
+                                        <a href="#" title="" class="ed-opts-open post-jb">
+                                            <img src="~/images/edit.png" width="30" height="30" title="Makaleni Düzenle"
+                                                 data-articlecode="@articleDetail.articleCodeID" data-articleTitle="@articleDetail.articleTitle" data-articlecontent="@articleDetail.articleContent"
+                                                 id="EditArticle_@articleDetail" onclick="showPopupEditPost('EditArticle_@EditItemIndex2')" />
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="#" title="" class="ed-opts-open"> <img src="~/images/edit.png" width="50" height="50" title="Makaleni Düzenle" hidden="hidden" /></a>
+                                    }
+                                }
+                            </div>
+                        </div>
+                        <div class="epi-sec">
+                        </div>
+                        <div class="job_descp">
+                            <h3>@articleDetail.articleTitle</h3>
+                            <ul class="job-dt">
+                                <li><a href="#" title="">Yayınlanma Tarihi</a></li>
+                                <li><span>@articleDetail.articleSharedDate.ToShortDateString() </span></li>
+                            </ul>
+                            <p>@articleDetail.articleContent</p>
+                            <ul class="skill-tags">
+                                <li><a href="#" title="">Makale</a></li>
+                            </ul>
+                        </div>
+                        <div class="job-status-bar">
+                            <ul class="like-com">
+                                <li>
+                                    @{
+                                        ArticleLikes artlike = new ArticleLikes();
+                                        artlike = rep_ArtcLike.Find(x =>
+                                        x.article.articleCodeID == articleDetail.articleCodeID & x.user.userCodeID == ll2.user.userCodeID);
+                                        if (artlike == null)
+                                        {
+                                            <label id="btn_like_0" onclick="setLike('@ll2.user.userCodeID','@articleDetail.articleCodeID','btn_like_0')"><i></i>@LikesCount Beğen</label>
+
+                                        }
+                                        else
+                                        {
+                                            <label id="btn_like_0" style="color:#e44d3a" onclick="setLike('@ll2.user.userCodeID','@articleDetail.articleCodeID','btn_like_0')"><i></i>@LikesCount Beğendin</label>
+                                        }
+
+
+                                    }
+                                </li>
+                                <li><label title=""><img src="images/com.png" alt=""> @CommentsCount Yorum</label></li>
+                            </ul>
+
+
+                        </div>
+                        <div class="job-status-bar">
+                            <table class="table table-active">
+                                @{
+                                    ICollection<ArticleComment> Icomments = articleDetail.comments;
+                                    List<ArticleComment> comments = Icomments.ToList();
+                                    for (int i = 0; i < articleDetail.comments.Count; i++)
+                                    {
+                                        <tr>
+                                            <td class="font-weight-bold text-left">@comments[i].user.userFirstName @comments[i].user.userLastName</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-left:20px;">@comments[i].articleComment</td>
+                                        </tr>
+                                    }
+                                }
+
+                                <tr>
+                                    <td><textarea class="form-control" placeholder="Yorum Yazınız" id="textarea_comment"></textarea> </td>
+                                    <td><input id="btn_sentComment" type="button" value="Yorum Yap" class="btn btn-info align-bottom" /></td>
+                                </tr>
+
+                            </table>
+                            <input type="hidden" id="hdnSession" data-usercode="@userCodeID" data-article="@articleDetail.articleCodeID" />
+                        </div>
+
+                    </div><!--post-bar end-->
+
+                    <div class="process-comm">
+                        <a href="#" title=""><img src="images/process-icon.png" alt=""></a>
+                    </div><!--process-comm end-->
+                </div><!--posts-section end-->
+                                        return;
+                                    }
+
+                                    Login ll = (Login)Session["LoginUSer"];
+                                    List<Article> artList = Model;
+                                    bool IsMyArticle = true;
+                                    int EditItemIndex = 1;
+                                    int likebtnIndex = 1;
+                                    for (int i = 0; i < artList.Count; i++)
+                                    {
+                                        Article article = artList[i];
+                                        DateTime SharedDate = article.articleSharedDate;
+                                        int diff = (DateTime.Now - SharedDate).Days;
+                                        string diffName = "Gün";
+                                        string LikesCount = "";
+                                        string CommentsCount = "";
+                                        try
+                                        {
+                                            LikesCount = article.likes.Count() > 0 ? article.likes.Count().ToString() : "";
+                                            CommentsCount = article.comments.Count() > 0 ? article.comments.Count().ToString() : "";
+                                        }
+                                        catch (Exception) { }
+                                        IsMyArticle = article.user.userCodeID == ll.user.userCodeID ? true : false;
+                                        if (diff == 0)
+                                        {
+                                            diff = (DateTime.Now - SharedDate).Hours;
+                                            diffName = "Saat";
+                                            if (diff == 0)
+                                            {
+                                                diff = (DateTime.Now - SharedDate).Minutes;
+                                                diffName = "Dakika";
+                                                if (diff == 0)
+                                                {
+                                                    diff = (DateTime.Now - SharedDate).Seconds;
+                                                    diffName = "Saniye";
+                                                }
+                                            }
+
+                                        }
+
+
+                                        <div class="posts-section">
+                                            <div class="post-bar">
+                                                <div class="post_topbar">
+                                                    <div class="usy-dt">
+                                                        <img src="~/images/writer.png" width="50" height="50" alt="">
+                                                        <div class="usy-name">
+                                                            <h3>@article.user.userFirstName @article.user.userLastName</h3>
+                                                            <span><img src="images/clock.png" alt="">@diff @diffName Önce</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="ed-opts">
+                                                        @{
+                                                            if (IsMyArticle)
+                                                            {
+
+                                                                <a href="#" title="" class="ed-opts-open post-jb">
+                                                                    <img src="~/images/edit.png" width="30" height="30" title="Makaleni Düzenle"
+                                                                         data-articlecode="@article.articleCodeID" data-articleTitle="@article.articleTitle" data-articlecontent="@article.articleContent"
+                                                                         id="EditArticle_@EditItemIndex" onclick="showPopupEditPost('EditArticle_@EditItemIndex')" />
+
+                                                                </a>
+                                                                EditItemIndex++;
+
+                                                            }
+                                                            else
+                                                            {
+                                                                <a href="#" title="" class="ed-opts-open"> <img src="~/images/edit.png" width="50" height="50" title="Makaleni Düzenle" hidden="hidden" /></a>
+
+                                                            }
+                                                        }
+
+                                                    </div>
+                                                </div>
+                                                <div class="epi-sec">
+
+                                                </div>
+                                                <div class="job_descp">
+                                                    <h3>@article.articleTitle</h3>
+                                                    <ul class="job-dt">
+                                                        <li><a href="#" title="">Yayınlanma Tarihi</a></li>
+                                                        <li><span>@article.articleSharedDate.ToShortDateString() </span></li>
+                                                    </ul>
+                                                    @{
+                                                        if (article.articleContent.Length >= 25)
+                                                        {
+                                                            <p>@article.articleContent.Substring(0, 25)...<a href="/Home/Comment/@article.articleCodeID" title=""> Devamını Göster</a></p>
+
+                                                        }
+                                                        else
+                                                        {
+                                                            <p>@article.articleContent...<a href="/Home/Comment/@article.articleCodeID" title=""> Devamını Göster</a></p>
+                                                        }
+                                                    }
+                                                    <ul class="skill-tags">
+                                                        <li><a href="#" title="">Makale</a></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="job-status-bar">
+                                                    <ul class="like-com">
+                                                        <li>
+                                                            @{
+                                                                ArticleLikes artlike = new ArticleLikes();
+                                                                artlike = rep_ArtcLike.Find(x =>
+                                                                x.article.articleCodeID == article.articleCodeID & x.user.userCodeID == ll.user.userCodeID);
+                                                                if (artlike == null)
+                                                                {
+                                                                    <label id="btn_like_@likebtnIndex" onclick="setLike('@ll.user.userCodeID','@article.articleCodeID','btn_like_@likebtnIndex')"><i></i>@LikesCount Beğen</label>
+
+                                                                }
+                                                                else
+                                                                {
+                                                                    <label id="btn_like_@likebtnIndex" style="color:#e44d3a" onclick="setLike('@ll.user.userCodeID','@article.articleCodeID','btn_like_@likebtnIndex')"><i></i>@LikesCount Beğendin</label>
+                                                                }
+                                                                likebtnIndex++;
+
+                                                            }
+                                                        </li>
+                                                        <li><a href="/Home/Comment/@article.articleCodeID" title=""><img src="images/com.png" alt="">@CommentsCount Yorum</a></li>
+                                                    </ul>
+
+
+                                                </div>
+                                            </div><!--post-bar end-->
+
+                                            <div class="process-comm">
+                                                <a href="#" title=""><img src="images/process-icon.png" alt=""></a>
+                                            </div><!--process-comm end-->
+                                        </div><!--posts-section end-->
+
+                                                                    }
+                                                                }
+                                                                else // annenimous user
+                                                                {
+                                                                    // hidden ShareArticleLink
+                                                                    <script>
+                                                                        $("#ShareArticleLink").attr('hidden', 'hidden');
+                                                                    </script>
+                                                                    List<Article> artList = Model;
+                                                                    for (int i = 0; i < artList.Count; i++)
+                                                                    {
+                                                                        Article article = artList[i];
+                                                                        DateTime SharedDate = article.articleSharedDate;
+                                                                        int diff = (DateTime.Now - SharedDate).Days;
+                                                                        string diffName = "Gün";
+                                                                        string LikesCount = article.likes.Count() > 0 ? article.likes.Count().ToString() : "";
+                                                                        string CommentsCount = article.comments.Count() > 0 ? article.comments.Count().ToString() : "";
+
+                                                                        if (diff == 0)
+                                                                        {
+                                                                            diff = (DateTime.Now - SharedDate).Hours;
+                                                                            diffName = "Saat";
+                                                                            if (diff == 0)
+                                                                            {
+                                                                                diff = (DateTime.Now - SharedDate).Minutes;
+                                                                                diffName = "Dakika";
+                                                                                if (diff == 0)
+                                                                                {
+                                                                                    diff = (DateTime.Now - SharedDate).Seconds;
+                                                                                    diffName = "Saniye";
+                                                                                }
+                                                                            }
+                                                                        }
+
+
+                                                                        <div class="posts-section">
+                                                                            <div class="post-bar">
+                                                                                <div class="post_topbar">
+                                                                                    <div class="usy-dt">
+                                                                                        <img src="~/images/writer.png" width="50" height="50" alt="">
+                                                                                        <div class="usy-name">
+                                                                                            <h3>@article.user.userFirstName @article.user.userLastName</h3>
+                                                                                            <span><img src="images/clock.png" alt=""> @diff @diffName Önce</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="epi-sec">
+                                                                                </div>
+                                                                                <div class="job_descp">
+                                                                                    <h3>@article.articleTitle</h3>
+                                                                                    <ul class="job-dt">
+                                                                                        <li><a href="#" title="">Yayınlanma Tarihi</a></li>
+                                                                                        <li><span>@article.articleSharedDate.ToShortDateString() </span></li>
+                                                                                    </ul>
+                                                                                    @{
+                                                                                        if (article.articleContent.Length >= 25)
+                                                                                        {
+                                                                                            <p>@article.articleContent.Substring(0, 25)...<a href="/Home/Login" title=""> Devamını Göster</a></p>
+
+                                                                                        }
+                                                                                        else
+                                                                                        {
+                                                                                            <p>@article.articleContent...<a href="/Home/Login" title=""> Devamını Göster</a></p>
+                                                                                        }
+                                                                                    }
+
+                                                                                    <ul class="skill-tags">
+                                                                                        <li><a href="#" title="">Makale</a></li>
+                                                                                    </ul>
+                                                                                </div>
+                                                                                <div class="job-status-bar">
+                                                                                    <ul class="like-com">
+                                                                                        <li>
+                                                                                            <a href="/Home/Login"><i></i> @LikesCount Beğen </a>
+                                                                                        </li>
+                                                                                        <li><a href="/Home/Login" title=""><img src="images/com.png" alt="">@CommentsCount Yorum</a></li>
+                                                                                    </ul>
+
+
+                                                                                </div>
+                                                                            </div><!--post-bar end-->
+
+                                                                            <div class="process-comm">
+                                                                                <a href="#" title=""><img src="images/process-icon.png" alt=""></a>
+                                                                            </div><!--process-comm end-->
+                                                                        </div><!--posts-section end-->
+
+                                                                                                }
+                                                                                            }
+
+                                                                                        }
+                                                                                        catch (Exception)
+                                                                                        {
+
+                                                                                        }
+
+
+}
